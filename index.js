@@ -10,8 +10,9 @@ const ejs = require("ejs");
 const PORT = process.env.PORT || 3309;
 
 app.set("view engine", ejs);
-app.set("view", __dirname + "/views");
+app.set("views", __dirname + "/views");
 app.set("layout", __dirname + "/views/layout/layout.ejs");
+
 app.use(ejsLayouts);
 
 app.use(express.static("static"));
