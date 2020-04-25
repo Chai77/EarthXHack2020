@@ -12,11 +12,11 @@ stores.features.forEach(function(store, i){
 });
 
 map.on('load', function (e) {
-    /* Add the data to your map as a layer */
+    /* Adding data to map as a layer */
     map.addLayer({
         "id": "locations",
         "type": "symbol",
-        /* Add a GeoJSON source containing place coordinates and information. */
+        /* Adding GeoJSON source containing place coordinates and information. */
         "source": {
         "type": "geojson",
         "data": stores
