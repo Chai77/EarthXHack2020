@@ -310,62 +310,65 @@ function buildLocationList(data) {
       if (prop.phone) {
         details.innerHTML += ' · ' + prop.phoneFormatted;
       }
+
+      link.addEventListener('click', function(e){
+       //   console.log(this.dataPosition);
+        var clickedListing = data.features[i];
+        console.log(clickedListing);
+        flyToStore(clickedListing);
+        createPopUp(clickedListing);
+      
+        var activeItem = document.getElementsByClassName('active');
+        if (activeItem[0]) {
+          activeItem[0].classList.remove('active');
+        }
+        this.parentNode.classList.add('active');
+      });
     });
+
+    map.on('click', function(e) {
+        /* Determine if a feature in the "locations" layer exists at that point. */ 
+        var features = map.queryRenderedFeatures(e.point, {
+          layers: ['locations']
+        });
+        
+        /* If yes, then: */
+        if (features.length) {
+          var clickedPoint = features[0];
+          
+          /* Fly to the point */
+          flyToStore(clickedPoint);
+          
+          /* Close all other popups and display popup for clicked store */
+          createPopUp(clickedPoint);
+          
+          /* Highlight listing in sidebar (and remove highlight for all other listings) */
+          var activeItem = document.getElementsByClassName('active');
+          if (activeItem[0]) {
+            activeItem[0].classList.remove('active');
+          }
+          var listing = document.getElementById('listing-' + clickedPoint.properties.id);
+          listing.classList.add('active');
+        }
+      });
+    
+      function flyToStore(currentFeature) {
+        map.flyTo({
+          center: currentFeature.geometry.coordinates,
+          zoom: 15
+        });
+      }
+      
+      function createPopUp(currentFeature) {
+        var popUps = document.getElementsByClassName('mapboxgl-popup');
+        /** Check if there is already a popup on the map and if so, remove it */
+        if (popUps[0]) popUps[0].remove();
+      
+        var popup = new mapboxgl.Popup({ closeOnClick: false })
+          .setLngLat(currentFeature.geometry.coordinates)
+          .setHTML('<h3>Sweetgreen</h3>' +
+            '<h4>' + currentFeature.properties.address + '</h4>')
+          .addTo(map);
+      }
 }
 
-function flyToStore(currentFeature) {
-    map.flyTo({
-      center: currentFeature.geometry.coordinates,
-      zoom: 15
-    });
-  }
-  
-  function createPopUp(currentFeature) {
-    var popUps = document.getElementsByClassName('mapboxgl-popup');
-    /** Check if there is already a popup on the map and if so, remove it */
-    if (popUps[0]) popUps[0].remove();
-  
-    var popup = new mapboxgl.Popup({ closeOnClick: false })
-      .setLngLat(currentFeature.geometry.coordinates)
-      .setHTML('<h3>Sweetgreen</h3>' +
-        '<h4>' + currentFeature.properties.address + '</h4>')
-      .addTo(map);
-  }
-
-  link.addEventListener('click', function(e){
-    var clickedListing = data.features[this.dataPosition];
-    flyToStore(clickedListing);
-    createPopUp(clickedListing);
-  
-    var activeItem = document.getElementsByClassName('active');
-    if (activeItem[0]) {
-      activeItem[0].classList.remove('active');
-    }
-    this.parentNode.classList.add('active');
-  });
-
-  map.on('click', function(e) {
-    /* Determine if a feature in the "locations" layer exists at that point. */ 
-    var features = map.queryRenderedFeatures(e.point, {
-      layers: ['locations']
-    });
-    
-    /* If yes, then: */
-    if (features.length) {
-      var clickedPoint = features[0];
-      
-      /* Fly to the point */
-      flyToStore(clickedPoint);
-      
-      /* Close all other popups and display popup for clicked store */
-      createPopUp(clickedPoint);
-      
-      /* Highlight listing in sidebar (and remove highlight for all other listings) */
-      var activeItem = document.getElementsByClassName('active');
-      if (activeItem[0]) {
-        activeItem[0].classList.remove('active');
-      }
-      var listing = document.getElementById('listing-' + clickedPoint.properties.id);
-      listing.classList.add('active');
-    }
-  });
