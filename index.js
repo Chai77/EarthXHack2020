@@ -1,5 +1,7 @@
 const express = require('express');
 const dotenv = require("dotenv");
+const homeRouter = require("./routes/home.js");
+
 dotenv.config();
 const app = express();
 const ejsLayouts = require("express-ejs-layouts");
@@ -15,6 +17,8 @@ app.use(ejsLayouts);
 app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+
+app.use(homeRouter);
 
 app.listen(PORT, () => {
     console.log(`The app is listening on port ${PORT}`);

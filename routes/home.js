@@ -13,3 +13,5 @@ router.get("/map", (req, res) => {
 router.get("/login", (req, res) => {
     res.render("home.html");
 });
+
+module.exports = router;
