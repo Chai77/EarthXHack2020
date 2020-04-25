@@ -1,0 +1,21 @@
+{
+  "name": "earthxhack2020",
+  "version": "1.0.0",
+  "description": "Our earthxhack project",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "Harsha, Chaitanya, Vamsi, Rahul",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "ejs": "^3.1.2",
+    "express": "^4.17.1",
+    "express-ejs-layouts": "^2.5.0",
+    "mongoose": "^5.9.10"
+  }
+}
