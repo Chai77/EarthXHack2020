@@ -14,4 +14,16 @@ router.get("/login", (req, res) => {
     res.render("login.ejs");
 });
 
+router.post("/login", (req, res) => {
+    res.send("Login function");
+});
+
+router.get("/add-store", (req, res) => {
+    res.render("register.ejs");
+});
+
+router.post("/add-store", (req, res) => {
+    res.send("Add store function");
+})
+
 module.exports = router;
