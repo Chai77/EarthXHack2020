@@ -35,7 +35,7 @@ map.on('load', function (e) {
 
   /* Add the data to your map as a layer */
  
-  fetch('http://localhost:3309/api/stores')
+  fetch('http://safe-queue.herokuapp.com/api/stores')
   .then((response) => {
     return response.json();
   }).then((rawData) => {
