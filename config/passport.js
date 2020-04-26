@@ -10,13 +10,13 @@ module.exports = async (passport, getStoreByUsername, getStoreById) => {
                 if (same) {
                     return done(null, user);
                 } else {
-                    return done(null, false);
+                    return done(null, false, {message: "Auth failed"});
                 }
             } catch (err) {
                 return done(err);
             }
         } else {
-            done(null, false);
+            done(null, false, {message: "Auth failed"});
         }
     };
 

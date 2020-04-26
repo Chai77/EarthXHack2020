@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <form action="/change-user-count?_method=PUT" method="POST">
+            <input type="number" name="people-change"/>
+            <label for="people-change">exited or entered</label>
+            <!-- radio buttons -->
+            <form>
+                <div><input type="radio" name="exits" /><label for="exits">Exits</label></div>
+                <div><input checked type="radio" name="enters" /><label for="enters">Enters</label></div>
+            </form>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

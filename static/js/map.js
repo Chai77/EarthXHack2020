@@ -7,10 +7,12 @@ if (!('remove' in Element.prototype)) {
   };
 }
 
-const socket = io.connect('http://localhost');
-socket.on('changed', (data) => {
-  console.log(data);
-});
+// const socket = io.connect('http://localhost');
+// socket.on('changed', (data) => {
+//   console.log(data);
+// });
+
+//Make a fetch request to "http://localhost:3309/api/stores"
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiaGFyc2hhMzExMCIsImEiOiJjazdydTBoYmYwaThlM25ucjR4MGh5OXc1In0.7ht60PgiBNbv6iz9Xm4y1Q';
 
@@ -41,16 +43,31 @@ stores.features.forEach(function (store, i) {
 
 map.on('load', function (e) {
   /* Adding data to map as a layer */
-  /* Add the data to your map as a layer */
   map.addSource('places', {
     type: 'geojson',
     data: stores
   });
-  // console.log(map.getLayer('stuff'));
 
-  buildLocationList(stores);
-  addMarkers();
-});
+  /* Add the data to your map as a layer */
+  fetch('http://localhost:3309/api/stores')
+  .then((response) => {
+    return response.json();
+  }).then((rawData) => {
+    console.log(rawData);
+    //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
+    var mapData = [];
+    convertLatLong();
+    
+  });
+  
+    buildLocationList(stores);
+    addMarkers();
+  });
+
+function convertLatLong(){
+  const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
+  var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key='+API_KEY;
+}
 
 function buildLocationList(data) {
   data.features.forEach(function (store, i) {
