@@ -9,19 +9,22 @@ const cookieParser = require("cookie-parser");
 const initializePassport = require("./config/passport.js");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
-const favicon = require('serve-favicon');
+const favicon = require("serve-favicon");
 const methodOverride = require("method-override");
 const cors = require("cors");
-const { checkAuthenticated, checkNotAuthenticated } = require("./middleware.js");
+const {
+    checkAuthenticated,
+    checkNotAuthenticated,
+} = require("./middleware.js");
 
-const stores = ["Hello world"];  //TODO: make this a real database
+const stores = []; //sameTODO: make this a real database
 
 dotenv.config();
 const app = express();
 // const server = http(app);
 // const io = socketio(server);
 
-app.use(favicon('favicon.ico'));
+app.use(favicon("favicon.ico"));
 
 const ejsLayouts = require("express-ejs-layouts");
 const ejs = require("ejs");
@@ -52,11 +55,22 @@ app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-initializePassport(passport, (username) => {
-    return stores.find((store) => {
-        return store.username === username.trim().toLowerCase();
-    });
-});
+initializePassport(
+    passport,
+    (username) => {
+        return stores.find((store) => {
+            console.log(store);
+            return (
+                store.username.toLowerCase() === username.trim().toLowerCase()
+            );
+        });
+    },
+    (id) => {
+        return stores.find((store) => {
+            return store._id === id;
+        });
+    }
+);
 
 app.use(cookieParser());
 app.use(
@@ -77,11 +91,13 @@ app.get("/", (req, res) => {
 });
 
 app.get("/map", (req, res) => {
-    res.render("map.ejs", { website: req.protocol + "://" + req.hostname + ":" + PORT });
+    res.render("map.ejs", {
+        website: req.protocol + "://" + req.hostname + ":" + PORT,
+    });
 });
 
 app.get("/login", checkAuthenticated, (req, res) => {
-    res.render("login.ejs", {message: ""});
+    res.render("login.ejs", { message: "" });
 });
 
 app.post(
@@ -90,7 +106,7 @@ app.post(
     passport.authenticate("local", {
         successRedirect: "/change-user-count",
         failureRedirect: "/login",
-        failureFlash: true,
+        failureFlash: false,
     })
 );
 
@@ -100,9 +116,27 @@ app.get("/add-store", checkAuthenticated, (req, res) => {
 
 app.post("/add-store", checkAuthenticated, async (req, res) => {
     //Add the store to the list
-    const { username, password, address, zipcode, phone_number, capacity } = req.body;
-    if(username == "" || password == "" || address == "" || zipcode == "" || phone_number=="" || capacity=="") {
-        return res.render("register.ejs", { errorMessage: "Must fill out all of the spaces"});
+    const {
+        username,
+        password,
+        address,
+        zipcode,
+        phone_number,
+        capacity,
+        category,
+        storeName,
+    } = req.body;
+    if (
+        username == "" ||
+        password == "" ||
+        address == "" ||
+        zipcode == "" ||
+        phone_number == "" ||
+        capacity == ""
+    ) {
+        return res.render("register.ejs", {
+            errorMessage: "Must fill out all of the spaces",
+        });
     }
     const otherUsernames = stores.find((store) => {
         return store.username === username;
@@ -119,13 +153,15 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
                 zipcode,
                 phone_number,
                 capacity,
+                storeName,
+                category,
                 _id: uuid.v4(),
             };
             stores.push(newObject);
             res.redirect("/change-user-count");
         } catch (err) {
             res.render("register.ejs", {
-                errorMessage: "User creation failed"
+                errorMessage: "User creation failed",
             });
         }
     }

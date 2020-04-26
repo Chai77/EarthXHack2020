@@ -6,7 +6,8 @@ module.exports = async (passport, getStoreByUsername, getStoreById) => {
         const user = getStoreByUsername(username);
         if (user) {
             try {
-                const same = await bcrypt.compare(password, user.password);
+                //const same = await bcrypt.compare(password, user.password);
+                const same = password === user.password;
                 if (same) {
                     return done(null, user);
                 } else {

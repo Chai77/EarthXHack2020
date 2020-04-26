@@ -66,7 +66,20 @@ map.on('load', function (e) {
 
 function convertLatLong(){
   const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
-  var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key='+API_KEY;
+ // var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key='+API_KEY;
+  var location = '2715 Dames ln Irving TX';
+  axios.get('https://maps.googleapis.com/maps/api/geocode/json',{
+    params:{
+      address: location,
+      key: API_KEY
+    }
+  }).then(function(response){
+    var coords = [];
+    coords.push(response.data.results[0].geometry.location.lat);
+    coords.push(response.data.results[0].geometry.location.lng);
+
+    console.log(coords);
+  });
 }
 
 function buildLocationList(data) {
