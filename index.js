@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const socketio = require("socket.io");
 const dotenv = require("dotenv");
 const homeRouter = require("./routes/home.js");
 const passport = require("passport");
@@ -7,14 +9,30 @@ const cookieParser = require("cookie-parser");
 const initializePassport = require("./config/passport.js");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
-const {checkAuthenticated, checkNotAuthenticated} = require("./middleware.js");
+const { checkAuthenticated, checkNotAuthenticated } = require("./middleware.js");
+
+const stores = [];  //TODO: make this a real database
 
 dotenv.config();
 const app = express();
+const server = http.Server(app);
+const io = socketio(server);
 const ejsLayouts = require("express-ejs-layouts");
 const ejs = require("ejs");
 
 const PORT = process.env.PORT || 3309;
+
+let sockets = [];
+io.on("connection", (sock) => {
+    console.log("There was a new connection");
+    sock.emit("changed", stores);
+    sockets.push(sock);
+    sock.on('disconnect', () => {
+        sockets = sockets.filter(socket => {
+            return socket.id != sock.id;
+        });
+    });
+});
 
 app.set("view engine", ejs);
 app.set("views", __dirname + "/views");
@@ -25,8 +43,6 @@ app.use(ejsLayouts);
 app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const stores = [];
 
 initializePassport(passport, (username) => {
     return stores.find((store) => {
@@ -53,7 +69,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/map", (req, res) => {
-    res.render("map.ejs");
+    res.render("map.ejs", { website: req.protocol + "://" + req.hostname + ":" + PORT });
 });
 
 app.get("/login", checkAuthenticated, (req, res) => {
@@ -85,7 +101,6 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
         res.render("register.ejs", { errorMessage: "Username is taken" });
     } else {
         try {
-            console.log("Hello World");
             const hashedPassword = await bcrypt.hash(password, 10);
             const newObject = {
                 username,
@@ -94,9 +109,12 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
             };
             stores.push(newObject);
             res.redirect("/change-user-count");
+            sockets.forEach(socket => {
+                socket.emit("changed", stores);
+            });
         } catch (err) {
             res.render("register.ejs", {
-                errorMessage: "User creation failed",
+                errorMessage: "User creation failed"
             });
         }
     }
@@ -107,9 +125,12 @@ app.get("/change-user-count", checkNotAuthenticated, (req, res) => {
 });
 
 app.put("/change-user-count", checkNotAuthenticated, (req, res) => {
+    sockets.forEach(socket => {
+        socket.emit("changed", stores);
+    })
     res.send("Change user count value PUT call");
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`The app is listening on port ${PORT}`);
 });

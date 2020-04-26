@@ -1,0 +1,9 @@
+#intro {
+    margin: auto;
+    background-color: beige;
+    width: 500px;
+    border: 5px solid lightgrey;
+    padding: 50px;
+    margin: 20px;
+    text-align: center;
+}

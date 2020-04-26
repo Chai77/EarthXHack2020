@@ -25,7 +25,7 @@ module.exports = async (passport, getStoreByUsername, getStoreById) => {
         new LocalStrategy(
             {
                 usernameField: "storeUsername",
-                passwordField: "password",
+                passwordField: "password"
             },
             isCorrect
         )
