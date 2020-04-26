@@ -44,46 +44,89 @@ map.on('load', function (e) {
   .then((response) => {
     return response.json();
   }).then((rawData) => {
-    console.log(rawData);
     //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
     var mapData = [];
+    console.log("rawData");
+    console.log(rawData);
+    counter = 0;
     rawData.forEach(function(store){
-      feature =
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [
-              0,
-              0
-            ]
-          },
-          "properties": {
-            "phoneFormatted": "",
-            "phone": "",
-            "address": "",
-            "city": "",
-            "country": "",
-            "crossStreet": "",
-            "postalCode": "",
-            "name": ""
-          }
-        };
-      coords = convertLatLong(store.street_address);
-      feature.geometry.coordinates = coords;
+      addToMap(store, rawData.length);
+    });
+    //outside for each
+  });
+});
+
+let counter = 0;
+
+ async function addToMap(store, length){
+  if(store.street_address != null){
+    feature =
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": 
+            {
+              lng: 0,
+              lat: 0
+            }
+        },
+        "properties": {
+          "phoneFormatted": "",
+          "phone": "",
+          "address": "",
+          "city": "",
+          "country": "",
+          "crossStreet": "",
+          "postalCode": "",
+          "name": ""
+        }
+      };
+    var coords = [];
+    coords = getLatLong(temp, feature, store, coords, length);
+    
+    function temp(feature, store, coords, length){
+      console.log("coords");
+      console.log(coords);
+      feature.geometry.coordinates.lng = coords[0];
+      feature.geometry.coordinates.lat = coords[1];
       feature.properties.phoneFormatted = formatPhone(store.phone);
       feature.properties.phone = store.phone;
       feature.properties.address = store.street_address;
       feature.properties.postalCode = store.zipcode;
       feature.properties.name = store.name;
-      stores.features.push(JSON.stringify(feature));
-    });
-    console.log("gieorvnevrn");
-    console.log(stores.features);
-    buildLocationList(stores);
-    addMarkers();
+      stores.features.push(feature);
+      console.log("counter");
+      counter++;
+      if(counter === length) {
+        func(stores);
+      }
+    } 
+  }
+}
+//TODO: set counter=0
+
+function getLatLong(_callback, feature, store, coords, length){
+  const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
+  axios.get('https://maps.googleapis.com/maps/api/geocode/json',{
+    params:{
+      address: store.street_address,
+      key: API_KEY
+    }
+    
+  }).then(function(response){
+    coords.push(response.data.results[0].geometry.location.lng);
+    coords.push(response.data.results[0].geometry.location.lat);
+    _callback(feature, store, coords, length);
   });
-  });
+}
+
+function func(stores){
+      console.log("gieorvnevrn");
+      console.log(stores.features);
+      buildLocationList(stores);
+      addMarkers();
+};
 
 function formatPhone(phone){
   var output = "(";
@@ -97,28 +140,12 @@ function formatPhone(phone){
   return output;
 }
 
-function convertLatLong(location){
-  const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
-  var coords = [];
- // var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key='+API_KEY;
-  axios.get('https://maps.googleapis.com/maps/api/geocode/json',{
-    params:{
-      address: location,
-      key: API_KEY
-    }
-  }).then(function(response){
-    coords.push(response.data.results[0].geometry.location.lng);
-    coords.push(response.data.results[0].geometry.location.lat);
-  
-    console.log(coords);
-  });
-  return coords;
-}
-
 function buildLocationList(data) {
   console.log("data");
-  console.log(data);
+  console.log(data.features);
+  console.log(data.features.length);
   data.features.forEach(function (store, i) {
+    console.log("this area was reached");
     console.log("store");
     console.log(store);
     /**
@@ -126,14 +153,13 @@ function buildLocationList(data) {
      * which will be used several times below.
     **/
     var prop = store.properties;
-    console.log(prop);
-
+   
     /* Add a new listing section to the sidebar. */
     var listings = document.getElementById('listings');
     var listing = listings.appendChild(document.createElement('div'));
     /* Assign a unique `id` to the listing. */
-    listing.id = "listing-" + prop.id;
-    console.log("id:"+prop.id);
+    listing.id = "listing-" + prop.name;
+    console.log("id:"+prop.name);
     /* Assign the `item` class to each listing for styling. */
     listing.className = 'item';
 
@@ -141,7 +167,7 @@ function buildLocationList(data) {
     var link = listing.appendChild(document.createElement('a'));
     link.href = '#';
     link.className = 'title';
-    link.id = "link-" + prop.id;
+    link.id = "link-" + prop.name;
     link.innerHTML = prop.address;
 
     /* Add details to the individual listing. */
@@ -165,8 +191,6 @@ function buildLocationList(data) {
       this.parentNode.classList.add('active');
     });
   });
-
-
 }
 
 function flyToStore(currentFeature) {
