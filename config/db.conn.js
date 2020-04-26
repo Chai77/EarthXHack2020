@@ -12,12 +12,12 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
         acquire: dbConfig.pool.acquire,
         idle: dbConfig.pool.idle
     }
-});
+}, );
 
 const dbEarthXHack2020 = {};
 
 dbEarthXHack2020.Sequelize = Sequelize;
 dbEarthXHack2020.sequelize = sequelize;
 
-dbEarthXHack2020.storeInfo = require("./storeinfo.model.js")(sequelize, Sequelize);
+dbEarthXHack2020.storeInfo = require("../models/storesinfo.js")(sequelize, Sequelize);
 module.exports = dbEarthXHack2020;

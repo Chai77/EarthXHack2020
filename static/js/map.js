@@ -23,19 +23,10 @@ var map = new mapboxgl.Map({
   zoom: 14
 });
 
-var stores = (function () {
-  var json = null;
-  $.ajax({
-    'async': false,
-    'global': false,
-    'url': '/sweetgreen.geojson',
-    'dataType': "json",
-    'success': function (data) {
-      json = data;
-    }
-  });
-  return json;
-})();
+var stores ={
+  "type": "FeatureCollection",
+  "features": []
+};
 
 stores.features.forEach(function (store, i) {
   store.properties.id = i;
@@ -57,13 +48,54 @@ map.on('load', function (e) {
     //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
     var mapData = [];
     rawData.forEach(function(store){
+      feature =
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          },
+          "properties": {
+            "phoneFormatted": "",
+            "phone": "",
+            "address": "",
+            "city": "",
+            "country": "",
+            "crossStreet": "",
+            "postalCode": "",
+            "name": ""
+          }
+        };
       coords = convertLatLong(store.street_address);
+      feature.geometry.coordinates = coords;
+      feature.properties.phoneFormatted = formatPhone(store.phone);
+      feature.properties.phone = store.phone;
+      feature.properties.address = store.street_address;
+      feature.properties.postalCode = store.zipcode;
+      feature.properties.name = store.name;
+      stores.features.push(JSON.stringify(feature));
     });
-  });
-  
+    console.log("gieorvnevrn");
+    console.log(stores.features);
     buildLocationList(stores);
     addMarkers();
   });
+  });
+
+function formatPhone(phone){
+  var output = "(";
+  for (var i = 0; i < phone.length; i++) {
+    if(output.length == 4)
+      output += ") ";
+    else if(output.length == 9)
+      output += "-";
+    output += phone.charAt(i);
+  }
+  return output;
+}
 
 function convertLatLong(location){
   const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
@@ -75,27 +107,33 @@ function convertLatLong(location){
       key: API_KEY
     }
   }).then(function(response){
-    coords.push(response.data.results[0].geometry.location.lat);
     coords.push(response.data.results[0].geometry.location.lng);
-
+    coords.push(response.data.results[0].geometry.location.lat);
+  
     console.log(coords);
   });
   return coords;
 }
 
 function buildLocationList(data) {
+  console.log("data");
+  console.log(data);
   data.features.forEach(function (store, i) {
+    console.log("store");
+    console.log(store);
     /**
      * Create a shortcut for `store.properties`,
      * which will be used several times below.
     **/
     var prop = store.properties;
+    console.log(prop);
 
     /* Add a new listing section to the sidebar. */
     var listings = document.getElementById('listings');
     var listing = listings.appendChild(document.createElement('div'));
     /* Assign a unique `id` to the listing. */
     listing.id = "listing-" + prop.id;
+    console.log("id:"+prop.id);
     /* Assign the `item` class to each listing for styling. */
     listing.className = 'item';
 

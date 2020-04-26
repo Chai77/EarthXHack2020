@@ -3,7 +3,7 @@ const StoresInfo = db.storesinfo;
 const Op = db.Sequelize.Op;
 
 //[STEP-4 A]// Add Features: Create and Save a new StoresInfo 
-exports.create = (req, res) => {
+module.exports.create = (req, res) => {
     // Validate request for Store ID
     if (!req.body.store_id) {
         res.status(400).send({
@@ -65,7 +65,7 @@ exports.create = (req, res) => {
 
 
 //[STEP-4 B] Add Features: Retrieve All StoresInfo objects (with condition)
-exports.findAll = (req, res) => {
+module.exports.findAll = (req, res) => {
     const store_id = req.query.store_id;
     var condition = store_id ? { store_id: { [Op.like]: `%${store_id}%` } } : null;
 
@@ -82,7 +82,7 @@ exports.findAll = (req, res) => {
 };
 
 //[STEP-4 C] Add Features: Retrieve a single StoresInfo object
-exports.findOne = (req, res) => {
+module.exports.findOne = (req, res) => {
     const store_id = req.params.store_id;
 
     StoresInfo.findByPk(store_id)
@@ -97,7 +97,7 @@ exports.findOne = (req, res) => {
 };
 
 //[STEP-4 D] Add Features: Update StoresInfo object
-exports.update = (req, res) => {
+module.exports.update = (req, res) => {
     const store_id = req.params.store_id;
 
     StoresInfo.update(req.body, {
@@ -123,7 +123,7 @@ exports.update = (req, res) => {
 
 
 //[STEP-4 E] Add Features: Delete StoresInfo object
-exports.delete = (req, res) => {
+module.exports.delete = (req, res) => {
     const store_id = req.params.store_id;
 
     StoresInfo.destroy({
@@ -149,7 +149,7 @@ exports.delete = (req, res) => {
 
 
 //[STEP-4 F] Add Features: Delete All StoresInfo objects
-exports.deleteAll = (req, res) => {
+module.exports.deleteAll = (req, res) => {
     StoresInfo.destroy({
         where: {},
         truncate: false
@@ -167,7 +167,7 @@ exports.deleteAll = (req, res) => {
 
 
 //[STEP-4 F] Add Features: Find all objects by condition
-exports.findAllPublished = (req, res) => {
+moduke.exports.findAllPublished = (req, res) => {
     StoresInfo.findAll({ where: { name: true } })
         .then(data => {
             res.send(data);

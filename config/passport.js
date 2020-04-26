@@ -33,7 +33,7 @@ module.exports = async (passport, getStoreByUsername, getStoreById) => {
     );
 
     passport.serializeUser((user, done) => {
-        done(null, user._id);
+        done(null, user.store_id);
     });
 
     passport.deserializeUser(async (id, done) => {

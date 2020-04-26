@@ -1,9 +1,12 @@
 module.exports = {
-    HOST: "192.168.0.10:3306",
-    USER: "earthx",
-    PASSWORD: "pa##w0rd",
-    DB: "EarthXHack2020",
+    HOST: "us-cdbr-iron-east-01.cleardb.net",
+    USER: "b36adf0be337e5",
+    PASSWORD: "2476f012",
+    DB: "heroku_246b02e345ebdc0",
     dialect: "mysql",
+    define: {
+        timestamps: false
+    },
     pool: {
         max: 5,
         min: 0,

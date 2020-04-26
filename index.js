@@ -12,6 +12,8 @@ const bcrypt = require("bcrypt");
 const favicon = require("serve-favicon");
 const methodOverride = require("method-override");
 const cors = require("cors");
+const db = require('./config/db.conn.js');
+const Sequelize  = require("sequelize");
 const {
     checkAuthenticated,
     checkNotAuthenticated,
@@ -55,20 +57,37 @@ app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const findByUsername = (username) => {
+    return stores.find(async (store) => {
+        console.log(store);
+        const UID = username.trim().toLowerCase();
+
+        try {
+            const info = db.storeInfo.findAll({});
+            const arrResult = info.find(store => {
+                return store.username == UID;
+            });
+            if(arrResult != null && arrResult.length > 0) {
+                return arrResult[0]; 
+            } else {
+                return false;
+            }
+        } catch {
+            return false;
+        }        
+    });
+}
+
 initializePassport(
     passport,
-    (username) => {
-        return stores.find((store) => {
-            console.log(store);
-            return (
-                store.username.toLowerCase() === username.trim().toLowerCase()
-            );
-        });
-    },
-    (id) => {
-        return stores.find((store) => {
-            return store._id === id;
-        });
+    findByUsername,
+    async (id) => {
+        try {
+            const data = await db.storeInfo.findByPk(id);
+            return data;
+        } catch {
+            return false;
+        }
     }
 );
 
@@ -138,26 +157,36 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
             errorMessage: "Must fill out all of the spaces",
         });
     }
-    const otherUsernames = stores.find((store) => {
-        return store.username === username;
-    });
+    const otherUsernames = findByUsername;
     if (otherUsernames && otherUsernames.length > 0) {
         console.log(otherUsernames);
         res.render("register.ejs", { errorMessage: "Username is taken" });
     } else {
         try {
-            const newObject = {
-                username,
+            const storeInfo = {
+                store_id: uuid.v4(),
+                username: username.trim().toLowerCase(),
                 password,
-                address,
+                street_address: address,
+                current_pop: 0,
                 zipcode,
-                phone_number,
-                capacity,
-                storeName,
+                phone: phone_number,
+                capacity: parseInt(capacity),
+                name: storeName,
                 category,
                 _id: uuid.v4(),
             };
-            stores.push(newObject);
+            // stores.push(newObject);
+            db.storeInfo.create(storeInfo)
+                .then(data => {
+                    res.send(data);
+                })
+                .catch(err => {
+                    res.status(500).send({
+                        message:
+                            err.message || "Some error occurred while creating the StoresInfo."
+                    });
+                });
             res.redirect("/change-user-count");
         } catch (err) {
             res.render("register.ejs", {
@@ -178,8 +207,21 @@ app.put("/change-user-count", checkNotAuthenticated, (req, res) => {
 });
 
 app.get("/api/stores", (req, res) => {
-    console.log("Hello World");
-    res.send(JSON.stringify(stores));
+    
+    db.storeInfo.findAll({})
+        .then(data => {
+            console.log(data);
+            res.send(JSON.stringify(data));
+        })
+        .catch(err => {
+            res.status(500).send({
+                message:
+                    err.message || "Some error occurred while retrieving Store Info."
+            });
+        });
+    
+    // console.log("Hello World");
+    // res.send(JSON.stringify(stores));
 });
 
 app.listen(PORT, () => {
