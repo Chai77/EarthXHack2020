@@ -56,30 +56,31 @@ map.on('load', function (e) {
     console.log(rawData);
     //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
     var mapData = [];
-    convertLatLong();
-    
+    rawData.forEach(function(store){
+      coords = convertLatLong(store.street_address);
+    });
   });
   
     buildLocationList(stores);
     addMarkers();
   });
 
-function convertLatLong(){
+function convertLatLong(location){
   const API_KEY = 'AIzaSyCfDEo7sik4-U-M5ptgRhj5Yw3IkFXv7rs';
+  var coords = [];
  // var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key='+API_KEY;
-  var location = '2715 Dames ln Irving TX';
   axios.get('https://maps.googleapis.com/maps/api/geocode/json',{
     params:{
       address: location,
       key: API_KEY
     }
   }).then(function(response){
-    var coords = [];
     coords.push(response.data.results[0].geometry.location.lat);
     coords.push(response.data.results[0].geometry.location.lng);
 
     console.log(coords);
   });
+  return coords;
 }
 
 function buildLocationList(data) {
