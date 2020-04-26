@@ -8,6 +8,9 @@
 <body>
     <div>
         <h1>Number of people: <%= numberOfPeople %></h1>
+        <% if(errorMessage != "") { %>
+            <h4 id="error_message">There was an error and the operation did not update</h4>
+        <% } %>
         <form action="/change-user-count-add" method="POST">
             <button type="submit">+</button>
         </form>

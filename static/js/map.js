@@ -39,9 +39,12 @@ map.on('load', function (e) {
   .then((response) => {
     return response.json();
   }).then((rawData) => {
-    //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
+    //(`store_id`, `name`, `category`, `capacity`, `phone`, 
+    //`current_pop`, `username`, `password`, 
+    //`street_address`, `zipcode`)
     var mapData = [];
     counter = 0;
+    console.log(rawData);
     rawData.forEach(function(store){
       addToMap(store, rawData.length);
     });
@@ -71,7 +74,9 @@ let counter = 0;
           "country": "",
           "crossStreet": "",
           "postalCode": "",
-          "name": ""
+          "name": "",
+          "currentPop":0,
+          "capacity":0
         }
       };
     var coords = [];
@@ -85,6 +90,8 @@ let counter = 0;
       feature.properties.address = store.street_address;
       feature.properties.postalCode = store.zipcode;
       feature.properties.name = store.name;
+      feature.properties.currentPop = store.current_pop;
+      feature.properties.capacity = store.capacity;
       stores.features.push(feature);
       counter++;
       if(counter === length) {
@@ -148,14 +155,28 @@ function buildLocationList(data) {
     link.href = '#';
     link.className = 'title';
     link.id = "link-" + prop.name;
-    link.innerHTML = prop.address;
+    link.innerHTML = prop.name;
 
     /* Add details to the individual listing. */
     var details = listing.appendChild(document.createElement('div'));
     details.innerHTML = prop.city;
     if (prop.phone) {
-      details.innerHTML += ' · ' + prop.phoneFormatted;
+      details.innerHTML += ' · ' + prop.phoneFormatted+"<br>";
     }
+
+    var crowd = prop.currentPop / prop.capacity;
+    details.innerHTML += ' has ' + prop.currentPop +" people<br>";
+    if(crowd < .33){
+      details.innerHTML += ' No crowd!<br>';
+
+    } else if (crowd < .66){
+      details.innerHTML += ' Little crowd ' + prop.currentPop +"<br>";
+    } else{
+      details.innerHTML += ' Too crowded! ' + prop.currentPop+"<br>";
+    }
+
+    if(prop.cur)
+    
 
     link.addEventListener('click', function (e) {
       var clickedListing = data.features[i];
@@ -185,7 +206,7 @@ function createPopUp(currentFeature) {
 
   var popup = new mapboxgl.Popup({ closeOnClick: false })
     .setLngLat(currentFeature.geometry.coordinates)
-    .setHTML('<h3>Sweetgreen</h3>' +
+    .setHTML('<h2>'+currentFeature.properties.name+'</h2>' +
       '<h4>' + currentFeature.properties.address + '</h4>')
     .addTo(map);
 }

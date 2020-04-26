@@ -23,6 +23,8 @@ body {
   a {
     color: #404040;
     text-decoration: none;
+    /* font-size: 22px;
+    text-align: center; */
   }
   
   a:hover {

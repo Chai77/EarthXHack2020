@@ -228,16 +228,33 @@ app.get("/change-user-count", checkNotAuthenticated, (req, res) => {
     });
 });
 
-app.post("/change-user-count", checkNotAuthenticated, async (req, res) => {
-    const { select, people_change } = req.body;
+app.post("/change-user-count-add", checkNotAuthenticated, async (req, res) => {
+    let newVal = req.user.current_pop + 1;
 
-    let change = parseInt(people_change);
+    const storeInfo = {
+        ...req.user,
+        current_pop: newVal,
+    };
 
-    if (select == "exit") {
-        change *= -1;
+    try {
+        const res = await db.storeInfo.update(storeInfo, {
+            where: { store_id: req.user.store_id },
+        });
+        res.render("change.ejs", {
+            numberOfPeople: storeInfo.current_pop,
+            errorMessage: "",
+        });
+    } catch (err) {
+        res.render("change.ejs", {
+            numberOfPeople: req.user.current_pop,
+            errorMessage: "The database was not updated",
+        });
     }
+});
 
-    let newVal = req.user.current_pop + change;
+app.post("/change-user-count-subtract", checkNotAuthenticated, async (req, res) => {
+
+    let newVal = req.user.current_pop -1;
     if (newVal < 0) {
         newVal = 0;
     }
