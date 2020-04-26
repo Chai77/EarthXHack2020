@@ -112,10 +112,9 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
         res.render("register.ejs", { errorMessage: "Username is taken" });
     } else {
         try {
-            const hashedPassword = await bcrypt.hash(password, 10);
             const newObject = {
                 username,
-                password: hashedPassword,
+                password,
                 address,
                 zipcode,
                 phone_number,
