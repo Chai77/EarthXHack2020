@@ -1,4 +1,4 @@
-var stores = {
+{
   "type": "FeatureCollection",
   "features": [
     {
@@ -237,4 +237,4 @@ var stores = {
       }
     }
   ]
-};
+}

@@ -6,6 +6,9 @@
     <title>Document</title>
 </head>
 <body>
+    <% if(errorMessage != null && errorMessage != "") { %>
+        <h4>There was an error: <%= errorMessage %></h4>
+    <% } %>
     <form action="/add-store" method="POST">
         <input type="text" name="username"/>
         <input type="password" name="password"/>
