@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const initializePassport = require("./config/passport.js");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
+const favicon = require('serve-favicon');
 const { checkAuthenticated, checkNotAuthenticated } = require("./middleware.js");
 
 const stores = [];  //TODO: make this a real database
@@ -16,7 +17,20 @@ const stores = [];  //TODO: make this a real database
 dotenv.config();
 const app = express();
 const server = http.Server(app);
-const io = socketio(server);
+
+app.use(favicon('favicon.ico'));
+
+const io = socketio(server, {
+    handlePreflightRequest: (req, res) => {
+        const headers = {
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
+            "Access-Control-Allow-Credentials": true
+        };
+        res.writeHead(200, headers);
+        res.end();
+    }
+});
 const ejsLayouts = require("express-ejs-layouts");
 const ejs = require("ejs");
 
