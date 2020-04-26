@@ -12,8 +12,9 @@ const bcrypt = require("bcrypt");
 const favicon = require("serve-favicon");
 const methodOverride = require("method-override");
 const cors = require("cors");
-const db = require('./config/db.conn.js');
-const Sequelize  = require("sequelize");
+const db = require("./config/db.conn.js");
+const Sequelize = require("sequelize");
+let numUsers;
 const {
     checkAuthenticated,
     checkNotAuthenticated,
@@ -57,39 +58,48 @@ app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const findByUsername = (username) => {
-    return stores.find(async (store) => {
-        console.log(store);
-        const UID = username.trim().toLowerCase();
+const findByUsername = async (
+    username,
+    second = false,
+    storeInfo = null,
+    res = null
+) => {
+    const UID = username.trim().toLowerCase();
 
-        try {
-            const info = db.storeInfo.findAll({});
-            const arrResult = info.find(store => {
-                return store.username == UID;
-            });
-            if(arrResult != null && arrResult.length > 0) {
-                return arrResult[0]; 
-            } else {
-                return false;
+    try {
+        const info = await db.storeInfo.findAll({});
+        console.log(info);
+        numUsers = info.length;
+        const arrResult = info.find((store) => {
+            return store.username == UID;
+        });
+        if (arrResult) {
+            if (second) {
+                continueCreation(arrResult[0], storeInfo, res);
             }
-        } catch {
-            return false;
-        }        
-    });
-}
-
-initializePassport(
-    passport,
-    findByUsername,
-    async (id) => {
-        try {
-            const data = await db.storeInfo.findByPk(id);
-            return data;
-        } catch {
+            return arrResult;
+        } else {
+            if (second) {
+                continueCreation(false, storeInfo, res);
+            }
             return false;
         }
+    } catch {
+        if (second) {
+            continueCreation(false, storeInfo, res);
+        }
+        return false;
     }
-);
+};
+
+initializePassport(passport, findByUsername, async (id) => {
+    try {
+        const data = await db.storeInfo.findByPk(id);
+        return data;
+    } catch {
+        return false;
+    }
+});
 
 app.use(cookieParser());
 app.use(
@@ -133,6 +143,45 @@ app.get("/add-store", checkAuthenticated, (req, res) => {
     res.render("register.ejs", { errorMessage: "" });
 });
 
+const continueCreation = (otherUsernames, storeInfo, res) => {
+    if (otherUsernames) {
+        console.log(otherUsernames);
+        res.render("register.ejs", { errorMessage: "Username is taken" });
+    } else {
+        try {
+            storeInfo.store_id = numUsers + 1;
+            // stores.push(newObject);
+            db.storeInfo
+                .create(storeInfo)
+                .then((data) => {
+                    console.log(data);
+                    res.redirect("/change-user-count");
+                })
+                .catch((err) => {
+                    console.log(err);
+                    res.render("register.ejs", {
+                        errorMessage: "Error creating account",
+                    });
+                });
+        } catch (err) {
+            res.render("register.ejs", {
+                errorMessage: "User creation failed",
+            });
+        }
+    }
+};
+
+// app.get("/delete-all", (req, res) => {
+//     db.storeInfo
+//         .destroy({
+//             where: {},
+//             truncate: true,
+//         })
+//         .then((data) => {
+//             console.log("Deleted everything");
+//         });
+// });
+
 app.post("/add-store", checkAuthenticated, async (req, res) => {
     //Add the store to the list
     const {
@@ -157,73 +206,88 @@ app.post("/add-store", checkAuthenticated, async (req, res) => {
             errorMessage: "Must fill out all of the spaces",
         });
     }
-    const otherUsernames = findByUsername;
-    if (otherUsernames && otherUsernames.length > 0) {
-        console.log(otherUsernames);
-        res.render("register.ejs", { errorMessage: "Username is taken" });
-    } else {
-        try {
-            const storeInfo = {
-                store_id: uuid.v4(),
-                username: username.trim().toLowerCase(),
-                password,
-                street_address: address,
-                current_pop: 0,
-                zipcode,
-                phone: phone_number,
-                capacity: parseInt(capacity),
-                name: storeName,
-                category,
-                _id: uuid.v4(),
-            };
-            // stores.push(newObject);
-            db.storeInfo.create(storeInfo)
-                .then(data => {
-                    res.send(data);
-                })
-                .catch(err => {
-                    res.status(500).send({
-                        message:
-                            err.message || "Some error occurred while creating the StoresInfo."
-                    });
-                });
-            res.redirect("/change-user-count");
-        } catch (err) {
-            res.render("register.ejs", {
-                errorMessage: "User creation failed",
-            });
-        }
-    }
+    const storeInfo = {
+        store_id: numUsers + 1,
+        username: username.trim().toLowerCase(),
+        password,
+        street_address: address,
+        current_pop: 0,
+        zipcode,
+        phone: phone_number,
+        capacity: parseInt(capacity),
+        name: storeName,
+        category,
+    };
+    findByUsername(username, true, storeInfo, res);
 });
 
 app.get("/change-user-count", checkNotAuthenticated, (req, res) => {
-    res.render("change.ejs");
+    res.render("change.ejs", {
+        errorMessage: "",
+        numberOfPeople: req.user.current_pop,
+    });
 });
 
-app.put("/change-user-count", checkNotAuthenticated, (req, res) => {
-    const { exits, enters, number } = req.body;
+app.post("/change-user-count", checkNotAuthenticated, async (req, res) => {
+    const { select, people_change } = req.body;
 
-    console.log(exits, enters, number);
+    let change = parseInt(people_change);
+
+    if (select == "exit") {
+        change *= -1;
+    }
+
+    let newVal = req.user.current_pop + change;
+    if (newVal < 0) {
+        newVal = 0;
+    }
+
+    const storeInfo = {
+        ...req.user,
+        current_pop: newVal,
+    };
+
+    try {
+        const res = await db.storeInfo.update(storeInfo, {
+            where: { store_id: req.user.store_id },
+        });
+        res.render("change.ejs", {
+            numberOfPeople: storeInfo.current_pop,
+            errorMessage: "",
+        });
+    } catch (err) {
+        res.render("change.ejs", {
+            numberOfPeople: req.user.current_pop,
+            errorMessage: "The database was not updated",
+        });
+    }
 });
 
 app.get("/api/stores", (req, res) => {
-    
-    db.storeInfo.findAll({})
-        .then(data => {
+    db.storeInfo
+        .findAll({})
+        .then((data) => {
             console.log(data);
             res.send(JSON.stringify(data));
         })
-        .catch(err => {
+        .catch((err) => {
             res.status(500).send({
                 message:
-                    err.message || "Some error occurred while retrieving Store Info."
+                    err.message ||
+                    "Some error occurred while retrieving Store Info.",
             });
         });
-    
+
     // console.log("Hello World");
     // res.send(JSON.stringify(stores));
+});
+
+app.post("/logout", checkNotAuthenticated, (req, res) => {
+    req.logOut();
+    res.redirect("/login");
 });
 
 app.listen(PORT, () => {
     console.log(`The app is listening on port ${PORT}`);
 });
+//DELETE * stores where stores_id = id

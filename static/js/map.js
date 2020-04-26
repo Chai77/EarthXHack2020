@@ -7,21 +7,14 @@ if (!('remove' in Element.prototype)) {
   };
 }
 
-// const socket = io.connect('http://localhost');
-// socket.on('changed', (data) => {
-//   console.log(data);
-// });
-
-//Make a fetch request to "http://localhost:3309/api/stores"
-
 mapboxgl.accessToken = 'pk.eyJ1IjoiaGFyc2hhMzExMCIsImEiOiJjazdydTBoYmYwaThlM25ucjR4MGh5OXc1In0.7ht60PgiBNbv6iz9Xm4y1Q';
-
 var map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/harsha3110/ck9g480050k2z1io25nryh6sb',
   center: [-96.994, 32.9693],
   zoom: 14
 });
+
 
 var stores ={
   "type": "FeatureCollection",
@@ -32,6 +25,7 @@ stores.features.forEach(function (store, i) {
   store.properties.id = i;
 });
 
+
 map.on('load', function (e) {
   /* Adding data to map as a layer */
   map.addSource('places', {
@@ -40,14 +34,13 @@ map.on('load', function (e) {
   });
 
   /* Add the data to your map as a layer */
+ 
   fetch('http://localhost:3309/api/stores')
   .then((response) => {
     return response.json();
   }).then((rawData) => {
     //(`store_id`, `name`, `category`, `capacity`, `phone`, `current_pop`, `username`, `password`, `street_address`, `zipcode`)
     var mapData = [];
-    console.log("rawData");
-    console.log(rawData);
     counter = 0;
     rawData.forEach(function(store){
       addToMap(store, rawData.length);
@@ -57,7 +50,6 @@ map.on('load', function (e) {
 });
 
 let counter = 0;
-
  async function addToMap(store, length){
   if(store.street_address != null){
     feature =
@@ -86,8 +78,6 @@ let counter = 0;
     coords = getLatLong(temp, feature, store, coords, length);
     
     function temp(feature, store, coords, length){
-      console.log("coords");
-      console.log(coords);
       feature.geometry.coordinates.lng = coords[0];
       feature.geometry.coordinates.lat = coords[1];
       feature.properties.phoneFormatted = formatPhone(store.phone);
@@ -96,7 +86,6 @@ let counter = 0;
       feature.properties.postalCode = store.zipcode;
       feature.properties.name = store.name;
       stores.features.push(feature);
-      console.log("counter");
       counter++;
       if(counter === length) {
         func(stores);
@@ -122,8 +111,6 @@ function getLatLong(_callback, feature, store, coords, length){
 }
 
 function func(stores){
-      console.log("gieorvnevrn");
-      console.log(stores.features);
       buildLocationList(stores);
       addMarkers();
 };
@@ -141,13 +128,7 @@ function formatPhone(phone){
 }
 
 function buildLocationList(data) {
-  console.log("data");
-  console.log(data.features);
-  console.log(data.features.length);
   data.features.forEach(function (store, i) {
-    console.log("this area was reached");
-    console.log("store");
-    console.log(store);
     /**
      * Create a shortcut for `store.properties`,
      * which will be used several times below.
@@ -159,7 +140,6 @@ function buildLocationList(data) {
     var listing = listings.appendChild(document.createElement('div'));
     /* Assign a unique `id` to the listing. */
     listing.id = "listing-" + prop.name;
-    console.log("id:"+prop.name);
     /* Assign the `item` class to each listing for styling. */
     listing.className = 'item';
 
@@ -178,9 +158,7 @@ function buildLocationList(data) {
     }
 
     link.addEventListener('click', function (e) {
-      //   console.log(this.dataPosition);
       var clickedListing = data.features[i];
-      //   console.log(clickedListing);
       flyToStore(clickedListing);
       createPopUp(clickedListing);
 

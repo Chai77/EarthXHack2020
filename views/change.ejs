@@ -7,15 +7,15 @@
 </head>
 <body>
     <div>
-        <form action="/change-user-count?_method=PUT" method="POST">
-            <input type="number" name="people-change"/>
-            <label for="people-change">exited or entered</label>
-            <!-- radio buttons -->
-            <form>
-                <div><input type="radio" name="exits" /><label for="exits">Exits</label></div>
-                <div><input checked type="radio" name="enters" /><label for="enters">Enters</label></div>
-            </form>
-            <button type="submit">Submit</button>
+        <h1>Number of people: <%= numberOfPeople %></h1>
+        <form action="/change-user-count-add" method="POST">
+            <button type="submit">+</button>
+        </form>
+        <form action="/change-user-count-subtract" method="POST">
+            <button type="submit">-</button>
+        </form>
+        <form action="/logout" method="POST">
+            <button type="submit">Log Out</button>
         </form>
     </div>
 </body>

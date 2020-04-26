@@ -10,14 +10,17 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
         max: dbConfig.pool.max,
         min: dbConfig.pool.min,
         acquire: dbConfig.pool.acquire,
-        idle: dbConfig.pool.idle
-    }
-}, );
+        idle: dbConfig.pool.idle,
+    },
+});
 
 const dbEarthXHack2020 = {};
 
 dbEarthXHack2020.Sequelize = Sequelize;
 dbEarthXHack2020.sequelize = sequelize;
 
-dbEarthXHack2020.storeInfo = require("../models/storesinfo.js")(sequelize, Sequelize);
+dbEarthXHack2020.storeInfo = require("../models/storesinfo.js")(
+    sequelize,
+    Sequelize
+);
 module.exports = dbEarthXHack2020;
