@@ -1,0 +1,5 @@
+GET http://localhost:3309/api/stores
+
+###
+
+POST http://localhost:3309/api/delete/5ea759aa5cad12542ad05114

@@ -34,15 +34,22 @@ module.exports = async (passport, getStoreByUsername, getStoreById) => {
     );
 
     passport.serializeUser((user, done) => {
-        done(null, user.store_id);
+        done(null, user.id);
     });
 
     passport.deserializeUser(async (id, done) => {
-        const user = getStoreById(id);
-        if (user) {
-            return done(null, user);
-        } else {
-            return done(null, false);
+        try {
+            const user = await getStoreById(id);
+            if (user) {
+                return done(null, user);
+            } else {
+                return done(null, false);
+            }
+        } catch (err) {
+            done(err);
         }
     });
 };
+
+//
+//DATABASE_URL=mongodb://127.0.0.1:27017/myapp
