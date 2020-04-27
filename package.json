@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js"
   },
-  "author": "Harsha, Chaitanya, Vamsi, Chandrasekar (Rahul)",
+  "author": "Harsha, Chaitanya, Vamsi,  Chandrasekar (Rahul)",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^2.0.3"
