@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 // const http = require("http");
 // const socketio = require("socket.io");
 const dotenv = require("dotenv");
@@ -12,15 +13,13 @@ const bcrypt = require("bcrypt");
 const favicon = require("serve-favicon");
 const methodOverride = require("method-override");
 const cors = require("cors");
-const db = require("./config/db.conn.js");
-const Sequelize = require("sequelize");
-let numUsers;
+const Store = require("./models/Store");
+const url = require("url");
+
 const {
     checkAuthenticated,
     checkNotAuthenticated,
 } = require("./middleware.js");
-
-const stores = []; //sameTODO: make this a real database
 
 dotenv.config();
 const app = express();
@@ -28,6 +27,20 @@ const app = express();
 // const io = socketio(server);
 
 app.use(favicon("favicon.ico"));
+
+mongoose.connect(process.env.DATABASE_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+});
+
+mongoose.connection.on("error", (err) => {
+    console.log("There was an error connecting to mongoose", err);
+});
+
+mongoose.connection.once("open", () => {
+    console.log("Mongoose connected successfully");
+});
 
 const ejsLayouts = require("express-ejs-layouts");
 const ejs = require("ejs");
@@ -58,44 +71,21 @@ app.use(express.static("static"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const findByUsername = async (
-    username,
-    second = false,
-    storeInfo = null,
-    res = null
-) => {
-    const UID = username.trim().toLowerCase();
-
+const findByUsername = async (username) => {
+    //Add the ability to find one object in the database with the same url
     try {
-        const info = await db.storeInfo.findAll({});
-        console.log(info);
-        numUsers = info.length;
-        const arrResult = info.find((store) => {
-            return store.username == UID;
-        });
-        if (arrResult) {
-            if (second) {
-                continueCreation(arrResult[0], storeInfo, res);
-            }
-            return arrResult;
-        } else {
-            if (second) {
-                continueCreation(false, storeInfo, res);
-            }
-            return false;
-        }
+        const store = Store.findOne({ username: username });
+        return store;
     } catch {
-        if (second) {
-            continueCreation(false, storeInfo, res);
-        }
         return false;
     }
 };
 
 initializePassport(passport, findByUsername, async (id) => {
     try {
-        const data = await db.storeInfo.findByPk(id);
-        return data;
+        //find a store given its id
+        const store = Store.findOne({ _id: id });
+        return store;
     } catch {
         return false;
     }
@@ -139,164 +129,183 @@ app.post(
     })
 );
 
-app.get("/add-store", checkAuthenticated, (req, res) => {
-    res.render("register.ejs", { errorMessage: "" });
+app.get("/change-user-count", checkNotAuthenticated, async (req, res) => {
+    let currentUser;
+    try {
+        currentUser = await req.user;
+        res.render("change.ejs", {
+            errorMessage: req.query.errorMessage ? req.query.errorMessage : "",
+            numberOfPeople: currentUser.current_pop,
+        });
+    } catch (err) {
+        res.render("change.ejs", {
+            errorMessage: "The data could not be accessed",
+            numberOfPeople: 0,
+        });
+    }
 });
 
-const continueCreation = (otherUsernames, storeInfo, res) => {
-    if (otherUsernames) {
-        console.log(otherUsernames);
-        res.render("register.ejs", { errorMessage: "Username is taken" });
-    } else {
-        try {
-            storeInfo.store_id = numUsers + 1;
-            // stores.push(newObject);
-            db.storeInfo
-                .create(storeInfo)
-                .then((data) => {
-                    console.log(data);
-                    res.redirect("/change-user-count");
-                })
-                .catch((err) => {
-                    console.log(err);
-                    res.render("register.ejs", {
-                        errorMessage: "Error creating account",
-                    });
-                });
-        } catch (err) {
-            res.render("register.ejs", {
-                errorMessage: "User creation failed",
-            });
-        }
-    }
-};
+app.post("/add-store", checkAuthenticated, async (req, res, next) => {
+    //Register method: create a new account
+    console.log("The method was called");
 
-// app.get("/delete-all", (req, res) => {
-//     db.storeInfo
-//         .destroy({
-//             where: {},
-//             truncate: true,
-//         })
-//         .then((data) => {
-//             console.log("Deleted everything");
-//         });
-// });
-
-app.post("/add-store", checkAuthenticated, async (req, res) => {
-    //Add the store to the list
     const {
         username,
         password,
         address,
         zipcode,
+        storeName,
+        category,
         phone_number,
         capacity,
-        category,
-        storeName,
     } = req.body;
-    if (
-        username == "" ||
-        password == "" ||
-        address == "" ||
-        zipcode == "" ||
-        phone_number == "" ||
-        capacity == ""
-    ) {
-        return res.render("register.ejs", {
-            errorMessage: "Must fill out all of the spaces",
+
+    console.log(req.body);
+
+    let user = 0;
+
+    try {
+        user = await Store.findOne({ username });
+        //console.log(user);
+        if (user !== null) {
+            console.log("Username is taken so pick another one");
+            return res.redirect("/login");
+        }
+        const newStore = new Store({
+            name: storeName,
+            category,
+            capacity,
+            phone: phone_number,
+            username,
+            password,
+            street_address: address,
+            zipcode,
+            current_pop: 0,
         });
+        await newStore.save();
+        req.logIn(newStore, (err) => {
+            if (err) {
+                return res.redirect("/login");
+            } else {
+                return res.redirect("/change-user-count");
+            }
+        });
+    } catch {
+        console.log("The saving of the database object didn't work");
+        res.redirect("/login");
     }
-    const storeInfo = {
-        store_id: numUsers + 1,
-        username: username.trim().toLowerCase(),
-        password,
-        street_address: address,
-        current_pop: 0,
-        zipcode,
-        phone: phone_number,
-        capacity: parseInt(capacity),
-        name: storeName,
-        category,
-    };
-    findByUsername(username, true, storeInfo, res);
 });
-
-app.get("/change-user-count", checkNotAuthenticated, (req, res) => {
-    res.render("change.ejs", {
-        errorMessage: "",
-        numberOfPeople: req.user.current_pop,
-    });
-});
-
 app.post("/change-user-count-add", checkNotAuthenticated, async (req, res) => {
-    let newVal = req.user.current_pop + 1;
-
-    const storeInfo = {
-        ...req.user,
-        current_pop: newVal,
-    };
-
+    let currentUser;
     try {
-        const res = await db.storeInfo.update(storeInfo, {
-            where: { store_id: req.user.store_id },
-        });
-        res.render("change.ejs", {
-            numberOfPeople: storeInfo.current_pop,
-            errorMessage: "",
-        });
+        currentUser = await req.user;
+        const user = await Store.findOne({ _id: currentUser._id });
+        user.current_pop = user.current_pop + 1;
+        await user.save();
+        res.redirect(
+            url.format({
+                pathname: "/change-user-count",
+            })
+        );
     } catch (err) {
-        res.render("change.ejs", {
-            numberOfPeople: req.user.current_pop,
-            errorMessage: "The database was not updated",
-        });
+        console.log("The database was not updated", err);
+        res.redirect(
+            url.format({
+                pathname: "/change-user-count",
+                query: {
+                    errorMessage: "The database was not updated",
+                },
+            })
+        );
     }
 });
 
-app.post("/change-user-count-subtract", checkNotAuthenticated, async (req, res) => {
-
-    let newVal = req.user.current_pop -1;
-    if (newVal < 0) {
-        newVal = 0;
+app.post(
+    "/change-user-count-subtract",
+    checkNotAuthenticated,
+    async (req, res) => {
+        let currentUser;
+        try {
+            currentUser = await req.user;
+            const user = await Store.findOne({ _id: currentUser.id });
+            user.current_pop = user.current_pop - 1;
+            await user.save();
+            res.redirect(
+                url.format({
+                    pathname: "/change-user-count",
+                })
+            );
+        } catch (err) {
+            console.log("The database was not updated", err);
+            res.redirect(
+                url.format({
+                    pathname: "/change-user-count",
+                    query: {
+                        errorMessage: "The database was not updated",
+                    },
+                })
+            );
+        }
     }
+);
 
-    const storeInfo = {
-        ...req.user,
-        current_pop: newVal,
-    };
-
+app.post("/api/delete-everything", async (req, res) => {
     try {
-        const res = await db.storeInfo.update(storeInfo, {
-            where: { store_id: req.user.store_id },
-        });
-        res.render("change.ejs", {
-            numberOfPeople: storeInfo.current_pop,
-            errorMessage: "",
-        });
-    } catch (err) {
-        res.render("change.ejs", {
-            numberOfPeople: req.user.current_pop,
-            errorMessage: "The database was not updated",
-        });
-    }
-});
-
-app.get("/api/stores", (req, res) => {
-    db.storeInfo
-        .findAll({})
-        .then((data) => {
-            console.log(data);
-            res.send(JSON.stringify(data));
-        })
-        .catch((err) => {
-            res.status(500).send({
-                message:
-                    err.message ||
-                    "Some error occurred while retrieving Store Info.",
+        const users = await Store.find({});
+        let counter = 0;
+        for (let i = users.length - 1; i >= 0; i--) {
+            await users[i].remove();
+            counter++;
+            if (counter == user.length) {
+                res.json({
+                    message: "The request was successful",
+                });
+            }
+        }
+        if (users.length === 0) {
+            res.json({
+                message: "The database was already empty",
             });
+        }
+    } catch (err) {
+        res.json({
+            message: "The request was unsuccessful",
         });
+    }
+});
 
-    // console.log("Hello World");
-    // res.send(JSON.stringify(stores));
+app.post("/api/delete/:id", async (req, res) => {
+    try {
+        console.log(req.params.id);
+        const store = await Store.findOne({ _id: req.params.id });
+        console.log(store);
+        if (store === null || !store.id) {
+            res.json({
+                message: "There is no store with that id",
+            });
+        } else {
+            await store.remove();
+            res.json({
+                message: "The store was successfully removed",
+            });
+        }
+    } catch (err) {
+        res.json({
+            message: "There was an error and the store could not be removed",
+            error: err,
+        });
+    }
+});
+
+app.get("/api/stores", async (req, res) => {
+    try {
+        const result = await Store.find({});
+        res.send(JSON.stringify(result));
+    } catch (err) {
+        res.json({
+            message: "There was an error fetching the data",
+        });
+    }
 });
 
 app.post("/logout", checkNotAuthenticated, (req, res) => {
@@ -308,3 +317,25 @@ app.listen(PORT, () => {
     console.log(`The app is listening on port ${PORT}`);
 });
 //DELETE * stores where stores_id = id
+
+/*
+
+        passport.authenticate("local", (err, user, info) => {
+            console.log(err, user, info);
+            if (err) {
+                console.log(err);
+                return res.redirect("/login");
+            }
+            if (!user) {
+                return res.redirect("/login");
+            }
+            req.logIn(user, (err) => {
+                if (err) {
+                    console.log("There was an error signing in", err);
+                    return res.redirect("/login");
+                }
+                return res.redirect("/change-user-count");
+            });
+        })(req, res, next);
+
+*/
