@@ -7,7 +7,10 @@
 </head>
 <body>
     <div>
-
+        <h1>People currently in store: <%= numberOfPeople %></h1>
+        <% if(errorMessage !== "") { %>
+            <h4>There was an error: <%= errorMessage %></h4>
+        <% } %>
         <form action="/change-user-count-add" method="POST">
             <button type="submit">+</button>
         </form>
